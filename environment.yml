@@ -1,0 +1,39 @@
+name: ngs_mapping
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  # Python version
+  - python=3.10
+
+  # Web backend
+  - fastapi
+  - uvicorn
+  - pydantic
+  - aiofiles
+  - requests
+
+  # Data & Bio libraries
+  - pandas
+  - numpy
+  - biopython
+  - plotly
+  - colorama
+  - pysam
+
+  # Bioinformatics tools
+  - minimap2
+  - samtools
+  - bcftools
+  - nanoplot
+  - porechop
+  - kraken2
+  - entrez-direct    # 提供 efetch
+
+  # pip depend
+  - pip
+  - pip:
+      # 這裡可以放前端需要的其他套件
+      # Recentrifuge 不放這裡，避免衝突
+      []
