@@ -11,14 +11,14 @@ git clone https://github.com/<你的帳號>/<你的專案名>.git
 cd <你的專案名>
 ```
 
-📦 安裝與環境建立
+###📦 安裝與環境建立
 本專案建議使用 conda 建立兩個獨立環境：
 
   ngs_mapping：主分析流程（後端、UI 分析）
 
   ngs_rcf：Recentrifuge（避免衝突）
 
-  1️⃣ 建立主分析環境
+1️⃣ 建立主分析環境
   
 ```bash
 conda env create -f environment.yml
@@ -29,7 +29,7 @@ conda env create -f environment.yml
 conda env create -f environment_rcf.yml
 ```
 
-⚙️ 流程功能
+###⚙️ 流程功能
 1. **Dorado Basecalling**
    - 支援 GPU / CPU
    - 輸出 FASTQ
@@ -51,7 +51,7 @@ conda env create -f environment_rcf.yml
    - 自動繪製 genome coverage 圖
 
 
-🚀 使用方式
+###🚀 使用方式
 啟動後端 API
 
 ```bash
@@ -68,5 +68,16 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 
 > 前端會呼叫後端 API 進行分析，請確保後端服務已啟動。
 
+###🛠️ 注意事項
+Dorado 安裝
 
+不在 conda 內，需自行安裝並放入 $PATH
+
+支援 CUDA / CPU 模式
+
+Windows 使用者
+
+建議在 WSL2（Ubuntu）中運行後端
+
+前端 HTML 可直接用 Windows 瀏覽器開啟
 
