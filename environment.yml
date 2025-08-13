@@ -29,7 +29,7 @@ dependencies:
   - nanoplot
   - porechop
   - kraken2
-  - entrez-direct    # 提供 efetch
+  - entrez-direct    # provide efetch
 
   # pip depend
   - pip
@@ -37,3 +37,4 @@ dependencies:
       # 這裡可以放前端需要的其他套件
       # Recentrifuge 不放這裡，避免衝突
       []
+
