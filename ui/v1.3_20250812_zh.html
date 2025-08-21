@@ -941,7 +941,7 @@
       const VG = state.mapVG || "<未填 FASTA 絕對路徑>";
       const sid = (state.mapSid || baseNameNoExt(inAbs) || "<sid>").replace(/\s+/g,"_");
       const out = joinOut(joinStep(state.wsAbs,"Step_4_mapping_consensus"), sid) || "<未設定工作資料夾>";
-      return `python ~/home_made_tools/raw_read_to_mapping_genome.py -f1 "${inAbs}" -mt minimap2 -VG "${VG}" -t ${Number(state.mapThreads)||10} -sid ${sid} -oD "${out}"`;
+      return `python nanopore_data_work_flow_with_ui-main/tools/raw_read_to_mapping_genome.py -f1 "${inAbs}" -mt minimap2 -VG "${VG}" -t ${Number(state.mapThreads)||10} -sid ${sid} -oD "${out}"`;
     }
     function updateCmdPreviewsStep4(){
       el("cmdPreviewRef").textContent = buildRefCmd();
