@@ -59,6 +59,12 @@ Add Dorado binary to your PATH (adjust version if different):
 export PATH=$PATH:$HOME/dorado-1.1.1-linux-x64/bin
 ```
 To make this permanent, add the line above to your ~/.bashrc or ~/.zshrc.
+
+```bash
+echo 'export PATH=$PATH:$HOME/dorado-1.1.1-linux-x64/bin' >> ~/.bashrc
+source ~/.bashrc
+```
+
 Verify installation:
 
 ```bash
