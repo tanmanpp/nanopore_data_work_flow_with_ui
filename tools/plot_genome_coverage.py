@@ -113,14 +113,21 @@ def plot_coverage(input_file, fasta_file, output_file, title, style):
 
     # Layout settings
     fig.update_layout(
-        height=200 * rows,
-        width=1000,
+        autosize=True
         title_text=title,
         showlegend=False,
         template="plotly_white"
     )
 
-    pio.write_html(fig, file=output_file, full_html=True, auto_open=False)
+    pio.write_html(
+        fig,
+        file=output_file,
+        full_html=True,
+        auto_open=False,
+        config={"responsive": True},
+        default_width="98vw",
+        default_height="95vh"
+    )
     print(f"✅ Coverage plot saved to: {output_file}")
 
 # main function to handle command line arguments
