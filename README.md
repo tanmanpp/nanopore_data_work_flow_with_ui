@@ -1,83 +1,71 @@
-# 🧬 NGS Reads Mapping UI
+# NGS(ONT) Mapping UI
 
-本專案提供一個前端 HTML + 後端 FastAPI 服務，讓非專業的生物資訊使用者也能輕鬆完成 NGS 讀長（reads）比對到對應基因體的流程，並自動產出覆蓋度圖與共識序列(Consensus sequence)。
+A user-friendly web interface for non-specialists to run **NGS(ONT) read mapping** against reference genomes.  
+The system combines a **FastAPI backend** with an **HTML/JS frontend**, allowing users to launch pipelines easily on Windows (via WSL).
 
 ---
 
-## 📥 下載專案
+## Features
+- Web-based UI (HTML) for simple workflow control.
+- Backend powered by **FastAPI** (`main.py`).
+- Supports read mapping workflows ([minimap2](https://github.com/lh3/minimap2), [samtools](https://github.com/samtools/samtools), [bcftools](https://github.com/samtools/bcftools), etc.).
+- Organized output directories for each processing step.
+- Ready-to-use script (`run_ui.py`) to start the backend and access the UI.
 
+---
+
+## Requirements
+- **Windows + WSL** (tested with Ubuntu on WSL2).
+- **Conda environment** with required bioinformatics tools installed.
+- Python ≥ 3.9
+
+## Installation
+
+### 1. Clone this repository
 ```bash
-git clone https://github.com/<你的帳號>/<你的專案名>.git
-cd <你的專案名>
+git clone https://github.com/tanmanpp/nanopore_data_work_flow_with_ui.git
+cd ngs-mapping-ui
 ```
 
-### 📦 安裝與環境建立
-本專案建議使用 conda 建立兩個獨立環境：
+### 2. Conda environments
+Two environment files are provided:
+- `environment.yml` → standard environment for UI and backend.
+- `environment_rcf.yml` → Environment for [rcf](https://github.com/khyox/recentrifuge).
 
-  ngs_mapping：主分析流程（後端、UI 分析）
-
-  ngs_rcf：Recentrifuge（避免衝突）
-
-1️⃣ 建立主分析環境
-  
+Create the environment:
 ```bash
 conda env create -f environment.yml
-```
-
-2️⃣ 建立 RCF 專用環境
-```
 conda env create -f environment_rcf.yml
+conda activate ngs_ui
 ```
 
-### ⚙️ 流程功能
-1. **Dorado Basecalling**
-   - 支援 GPU / CPU
-   - 輸出 FASTQ
+## 3. Usage
+### Launch the backend and UI
 
-2. **Demultiplex（demux）**
-   - 按 barcode 分樣
-
-3. **Reads 修剪與品質檢查**
-   - Porechop 修剪
-   - NanoPlot 視覺化品質報告
-
-4. **分類分析**
-   - Kraken2 分類
-   - Recentrifuge 視覺化
-
-5. **比對與共識序列生成**
-   - Minimap2 比對到參考基因體
-   - samtools / bcftools 分析
-   - 自動繪製 genome coverage 圖
-
-
-### 🚀 使用方式
-啟動後端 API
-
+From WSL:
 ```bash
-conda activate ngs_mapping
-uvicorn main:app --host 0.0.0.0 --port 8000
+conda activate ngs_ui
+python run_ui.py
 ```
+This will:
 
-### 開啟前端 UI
+Start the FastAPI backend using uvicorn.
 
-直接點開：
+Detect your WSL IP using hostname -I.
 
-- 中文介面：`v1.3_20250812_zh.html`
-- 英文介面：`v1.3_20250812_en.html`
+Print two URLs (English / Chinese) for direct access.
 
-> 前端會呼叫後端 API 進行分析，請確保後端服務已啟動。
+Example output:
+```java
+✅ Service is running
+🔎 Detected IP: 172.**.**.**
 
-### 🛠️ 注意事項
-Dorado 安裝
+— UI entry (English / default):
+   http://172.**.**.**:8000/ui/v1.3_20250812_en.html
 
-不在 conda 內，需自行安裝並放入 $PATH
+— UI entry (Chinese):
+   http://172.**.**.**:8000/ui/v1.3_20250812_zh.html
+```
+## Then, just copy one of the URLs and paste it into your Windows browser. Enjoy :)
 
-支援 CUDA / CPU 模式
-
-Windows 使用者
-
-建議在 WSL2（Ubuntu）中運行後端
-
-前端 HTML 可直接用 Windows 瀏覽器開啟
 
