@@ -47,7 +47,7 @@ We recommend the official AWS-hosted indexes:
 👉 [AWS Kraken2 Indexes Database](https://benlangmead.github.io/aws-indexes/k2)
 
 ### IV. Install Dorado
-Dorado is required for basecalling and demultiplexing.
+[Dorado](https://github.com/nanoporetech/dorado) is required for basecalling and demultiplexing.
 Download the latest release (example: 1.1.1):
 ```bash
 wget https://cdn.oxfordnanoportal.com/software/analysis/dorado-1.1.1-linux-x64.tar.gz
