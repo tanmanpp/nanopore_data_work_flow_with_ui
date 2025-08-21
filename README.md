@@ -68,7 +68,7 @@ dorado --version
 From WSL:
 ```bash
 conda activate ngs_ui
-python run_ui.py
+python run_serve.py
 ```
 This will:
 
