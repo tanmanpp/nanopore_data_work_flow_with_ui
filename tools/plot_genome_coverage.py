@@ -43,7 +43,7 @@ def plot_coverage(input_file, fasta_file, output_file, title, style):
         cols=1,
         shared_xaxes=False,
         subplot_titles=subplot_titles,
-        vertical_spacing=0.03,
+        vertical_spacing=0.1,
     )
 
     # plot each chromosome
