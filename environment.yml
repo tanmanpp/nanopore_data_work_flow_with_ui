@@ -1,4 +1,4 @@
-name: ngs_mapping
+name: ngs_ui
 channels:
   - conda-forge
   - bioconda
@@ -37,4 +37,5 @@ dependencies:
       # 這裡可以放前端需要的其他套件
       # Recentrifuge 不放這裡，避免衝突
       []
+
 
