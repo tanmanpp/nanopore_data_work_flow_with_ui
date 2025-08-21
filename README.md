@@ -42,7 +42,7 @@ conda env create -f environment_rcf.yml
 ```
 ### III. Download Kraken2 (K2) database
 To run classification, you must download a pre-built K2 database.
-We recommend the official AWS-hosted indexes:
+I recommend the official AWS-hosted indexes:
 
 👉 [AWS Kraken2 Indexes Database](https://benlangmead.github.io/aws-indexes/k2)
 
