@@ -17,17 +17,16 @@ The system combines a **FastAPI backend** with an **HTML/JS frontend**, allowing
 ## Requirements
 - **Windows + WSL** (tested with Ubuntu on WSL2).
 - **Conda environment** with required bioinformatics tools installed.
-- Python ≥ 3.9
 
 ## Installation
 
-### 1. Clone this repository
+### I. Clone this repository
 ```bash
 git clone https://github.com/tanmanpp/nanopore_data_work_flow_with_ui.git
 cd ngs-mapping-ui
 ```
 
-### 2. Conda environments
+### II. Conda environments
 Two environment files are provided:
 - `environment.yml` → standard environment for UI and backend.
 - `environment_rcf.yml` → Environment for [rcf](https://github.com/khyox/recentrifuge).
@@ -36,10 +35,34 @@ Create the environment:
 ```bash
 conda env create -f environment.yml
 conda env create -f environment_rcf.yml
-conda activate ngs_ui
+```
+### III. Download Kraken2 (K2) database
+To run classification, you must download a pre-built K2 database.
+We recommend the official AWS-hosted indexes:
+
+👉 [AWS Kraken2 Indexes Database](https://benlangmead.github.io/aws-indexes/k2)
+
+### IV. Install Dorado
+Dorado is required for basecalling and demultiplexing.
+Download the latest release (example: 1.1.1):
+```bash
+wget https://cdn.oxfordnanoportal.com/software/analysis/dorado-1.1.1-linux-x64.tar.gz
+tar -xvzf dorado-1.1.1-linux-x64.tar.gz
+```
+Add Dorado binary to your PATH (adjust version if different):
+
+```bash
+export PATH=$PATH:$HOME/dorado-1.1.1-linux-x64/bin
+```
+To make this permanent, add the line above to your ~/.bashrc or ~/.zshrc.
+Verify installation:
+
+```bash
+dorado --version
 ```
 
-## 3. Usage
+
+## Usage
 ### Launch the backend and UI
 
 From WSL:
@@ -66,6 +89,7 @@ Example output:
 — UI entry (Chinese):
    http://172.**.**.**:8000/ui/v1.3_20250812_zh.html
 ```
+
 ## Then, just copy one of the URLs and paste it into your Windows browser. Enjoy :)
 
 
