@@ -19,8 +19,8 @@ It also shows the exact commands executed under the hood, helping users understa
 ---
 
 ## Requirements
-- **Windows + WSL** (tested with Ubuntu on WSL2).
-- **Conda environment** with required bioinformatics tools installed.
+- **Windows + [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)** (tested with Ubuntu on WSL2).
+- **[Conda](https://www.anaconda.com/) environment** with required bioinformatics tools installed.
 
 ## Installation
 
