@@ -5,8 +5,8 @@ The system combines a **FastAPI backend** with an **HTML/JS frontend**, allowing
 
 ## Introduction
 
--To reduce inconvenience for beginners in bioinformatics, this project provides an interface that serves as a basic analysis platform.  
--It also shows the exact commands executed under the hood, helping users understand the processes and serving as a bridge for future learning and skill advancement.
+To reduce inconvenience for beginners in bioinformatics, this project provides an interface that serves as a basic analysis platform.
+It also shows the exact commands executed under the hood, helping users understand the processes and serving as a bridge for future learning and skill advancement.
 ---
 
 ## Features
