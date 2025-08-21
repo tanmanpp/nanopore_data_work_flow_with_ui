@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NGS Mapping UI · Workspace → Step 1–4</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <style>
+    .monospace{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .card{background:#fff;border-radius:1rem;box-shadow:0 10px 25px -10px rgba(0,0,0,.15);padding:1.25rem}
+    .log-pane{height:220px}
+    .locked{opacity:.45;pointer-events:none;filter:grayscale(25%)}
+    .dot{width:40px;height:40px;border-radius:9999px;display:grid;place-items:center;font-weight:700}
+    .dot-active{background:#0d9488;color:white}
+    .dot-next{background:#ccfbf1;color:#115e59}
+    .dot-done{background:#bbf7d0;color:#14532d}
+    .dot-skip{background:#fde68a;color:#92400e}
+    .dot-lock{background:#e5e7eb;color:#6b7280}
+    .kbd{background:#f3f4f6;border:1px solid #d1d5db;border-radius:4px;padding:0 6px;font-size:11px}
+    .hint{font-size:12px;color:#6b7280}
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 py-6">
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid fa-dna text-3xl text-teal-600"></i>
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800">NGS(ONT) Mapping UI</h1>
+          <p class="text-gray-600 text-sm">Specify the working directory (Absolute path) → Step 1–4</p>
+        </div>
+      </div>
+      <div class="text-sm text-gray-500">v2025-08-12</div>
+    </header>
+
+    <!-- Pipeline dots -->
+    <section class="card mb-6">
+      <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-3">
+        <i class="fa-solid fa-diagram-project text-teal-600"></i> Processing Pipeline
+      </h2>
+      <div class="flex items-center gap-3">
+        <div id="dot1" class="dot dot-lock" title="Step 1">1</div>
+        <div class="h-1 w-10 bg-gray-200 rounded"></div>
+        <div id="dot2" class="dot dot-lock" title="Step 2">2</div>
+        <div class="h-1 w-10 bg-gray-200 rounded"></div>
+        <div id="dot3" class="dot dot-lock" title="Step 3">3</div>
+        <div class="h-1 w-10 bg-gray-200 rounded"></div>
+        <div id="dot4" class="dot dot-lock" title="Step 4">4</div>
+      </div>
+    </section>
+
+    <!-- =================== STEP 0: Workspace (ABS PATH) =================== -->
+    <section class="card mb-6" id="sec0">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+          <i class="fa-solid fa-folder-tree text-teal-600"></i> Step 0 | Specify the working directory (Enter the absolute path)
+
+        </h3>
+        <span id="wsStatus" class="text-sm font-medium bg-amber-100 text-amber-700 px-3 py-1 rounded-full">Not set</span>
+      </div>
+      <div class="grid lg:grid-cols-2 gap-6">
+        <div class="space-y-3">
+          <label class="text-sm text-gray-700"> Working directory **Absolute path** (Accepts Windows or WSL path) </label>
+          <input id="wsAbs" type="text" placeholder="Example: D:\NGS\run1 or /mnt/d/NGS/run1"
+                 class="w-full border rounded-lg px-3 py-2 monospace" />
+          <p class="hint">All steps will output to the Step_1–4 subfolders under the specified directory. The command preview will display the original input.；<b>When actually executed, the backend will automatically convert it to a WSL path.</b>。</p>
+          <div class="flex items-center gap-2">
+            <button id="setWorkspace" class="px-3 py-2 rounded-lg bg-teal-600 text-white text-sm hover:bg-teal-700">
+              <i class="fa-solid fa-check mr-1"></i> Set and lock
+            </button>
+            <button id="prepWorkspace" class="px-3 py-2 rounded-lg bg-gray-800 text-white text-sm" disabled>
+              <i class="fa-solid fa-hammer mr-1"></i> Create subfolders immediately
+            </button>
+            <button id="clearWorkspace" class="px-3 py-2 rounded-lg bg-gray-200 text-gray-700 text-sm hover:bg-gray-300">
+              Reset
+            </button>
+          </div>
+          <div class="mt-2">
+            <div class="font-medium text-gray-800 mb-1">Folder creation command preview</div>
+            <pre id="cmdPreviewWS" class="bg-gray-900 text-gray-100 rounded-lg p-3 text-xs monospace overflow-x-auto"># Not ready</pre>
+          </div>
+        </div>
+        <div class="bg-gray-50 border rounded-xl p-4">
+          <div class="font-semibold mb-2">Created subfolders (Absolute path)</div>
+          <ul class="text-sm text-gray-700 leading-7 monospace">
+            <li id="pStep1">(Please set first)</li>
+            <li id="pStep2">(Please set first)</li>
+            <li id="pStep3">(Please set first)</li>
+            <li id="pStep4">(Please set first)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== STEP 1 (ABS PATH INPUTS) =================== -->
+    <section class="card mb-6 locked" id="sec1">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+          <i class="fa-solid fa-dna text-teal-600"></i>
+          Step 1｜Dorado Basecaller / Demux (Output folder: Step_1_basecaller_demux)
+        </h3>
+        <div class="flex items-center gap-2">
+          <button id="skip1" class="px-3 py-1.5 rounded-lg border border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 text-sm">Skip</button>
+          <button id="done1" class="px-3 py-1.5 rounded-lg bg-teal-600 text-white text-sm">Mark as complete</button>
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-2 gap-6">
+        <!-- Inputs -->
+        <div class="space-y-6">
+          <!-- POD5 absolute path -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">POD5 / FAST5 absolute path (Basecaller input directory)</label>
+            <input id="pod5Abs" type="text" placeholder="Example: D:\NGS\raw\pod5 or /mnt/d/NGS/raw/pod5"
+                   class="w-full border rounded-lg px-3 py-2 monospace"/>
+            <p class="hint mt-2">Output fixed to: <span class="kbd" id="s1OutLabel">(Please set the working directory first)</span></p>
+          </div>
+
+          <!-- Basecaller params -->
+          <div class="bg-gray-50 border rounded-xl p-4">
+            <div class="font-semibold mb-2">Basecaller (--emit-fastq、--no-trim fixed)</div>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-gray-500">--device</label>
+                <select id="device" class="w-full border rounded-lg px-3 py-2">
+                  <option value="cuda:all">cuda:all</option><option value="auto">auto</option><option value="cpu">cpu</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">--min-qscore</label>
+                <input id="minQ" type="number" min="0" max="20" step="1" value="9" class="w-full border rounded-lg px-3 py-2"/>
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">--kit-name</label>
+                <select id="kitName" class="w-full border rounded-lg px-3 py-2">
+                  <option value="">Choose kit</option>
+                  <!-- Common full series such as NBD/RBK/PCB/16S/DRB -->
+                  <option>EXP-NBD103</option><option>EXP-NBD104</option><option>EXP-NBD114</option><option>EXP-NBD114-24</option><option>EXP-NBD114-96</option><option>EXP-NBD196</option>
+                  <option>EXP-PBC001</option><option>EXP-PBC096</option>
+                  <option>SQK-16S024</option><option>SQK-16S114-24</option>
+                  <option>SQK-DRB004-24</option>
+                  <option>SQK-LWB001</option>
+                  <option>SQK-MAB114-24</option>
+                  <option>SQK-MLK111-96-XL</option><option>SQK-MLK114-96-XL</option>
+                  <option>SQK-NBD111-24</option><option>SQK-NBD111-96</option><option>SQK-NBD114-24</option><option>SQK-NBD114-96</option>
+                  <option>SQK-PBK004</option>
+                  <option>SQK-PCB109</option><option>SQK-PCB110</option><option>SQK-PCB111-24</option><option>SQK-PCB114-24</option>
+                  <option>SQK-RAB201</option><option>SQK-RAB204</option>
+                  <option>SQK-RBK001</option><option>SQK-RBK004</option><option>SQK-RBK110-96</option>
+                  <option>SQK-RBK111-24</option><option>SQK-RBK111-96</option>
+                  <option>SQK-RBK114-24</option><option>SQK-RBK114-96</option>
+                  <option>SQK-RLB001</option>
+                  <option>SQK-RPB004</option><option>SQK-RPB114-24</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">Model</label>
+                <select id="modelTier" class="w-full border rounded-lg px-3 py-2">
+                  <option value="">Select</option><option>fast</option><option>hac</option><option>sup</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Demux params -->
+          <div class="bg-gray-50 border rounded-xl p-4">
+            <div class="font-semibold mb-2">Demux (--emit-fastq fixed; Automatically organize upon completion <span class="kbd">barcodeXX/barcodeXX.fastq(.gz)</span>)</div>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-gray-500">Threads (-t)</label>
+                <input id="threads" type="number" min="1" step="1" value="10" class="w-full border rounded-lg px-3 py-2"/>
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">(Optional) --kit-name</label>
+                <select id="demuxKitName" class="w-full border rounded-lg px-3 py-2">
+                  <option value="">(Use kitname above or leave blank)</option>
+                  <option>EXP-NBD103</option><option>EXP-NBD104</option><option>EXP-NBD114</option><option>EXP-NBD114-24</option><option>EXP-NBD114-96</option><option>EXP-NBD196</option>
+                  <option>EXP-PBC001</option><option>EXP-PBC096</option>
+                  <option>SQK-16S024</option><option>SQK-16S114-24</option>
+                  <option>SQK-DRB004-24</option>
+                  <option>SQK-LWB001</option>
+                  <option>SQK-MAB114-24</option>
+                  <option>SQK-MLK111-96-XL</option><option>SQK-MLK114-96-XL</option>
+                  <option>SQK-NBD111-24</option><option>SQK-NBD111-96</option><option>SQK-NBD114-24</option><option>SQK-NBD114-96</option>
+                  <option>SQK-PBK004</option>
+                  <option>SQK-PCB109</option><option>SQK-PCB110</option><option>SQK-PCB111-24</option><option>SQK-PCB114-24</option>
+                  <option>SQK-RAB201</option><option>SQK-RAB204</option>
+                  <option>SQK-RBK001</option><option>SQK-RBK004</option><option>SQK-RBK110-96</option>
+                  <option>SQK-RBK111-24</option><option>SQK-RBK111-96</option>
+                  <option>SQK-RBK114-24</option><option>SQK-RBK114-96</option>
+                  <option>SQK-RLB001</option>
+                  <option>SQK-RPB004</option><option>SQK-RPB114-24</option>
+                </select>
+              </div>
+              <div class="sm:col-span-2">
+                <label class="text-xs text-gray-500">Demux input FASTQ (Absolute path; one per line)</label>
+                <textarea id="demuxAbsList" rows="4" placeholder="Example: D:\NGS\Step_1_basecaller_demux\calls_2025-08-13_T*****.fastq&#10;/mnt/d/NGS/Step_1_basecaller_demux/calls_2025-08-13_T*****.fastq.gz" class="w-full border rounded-lg px-3 py-2 font-mono whitespace-pre overflow-auto resize-y" ></textarea>
+              </div>
+              <p class="hint sm:col-span-2">Output fixed to: <span class="kbd" id="s1OutLabel2">(Please set the working directory first)</span></p>
+              <p id="demuxKitWarn" class="hint sm:col-span-2 text-amber-700"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Command preview & Run -->
+        <div class="space-y-6">
+          <!-- Basecaller CMD -->
+          <div class="bg-white border rounded-xl p-4">
+            <div class="flex items-center justify-between mb-2">
+              <h4 class="font-semibold text-gray-800">Basecaller Command preview</h4>
+              <div class="flex items-center gap-2">
+                <button id="copyCmdBase" class="px-2 py-1 rounded bg-gray-800 text-white text-xs"><i class="fa-regular fa-copy mr-1"></i>Copy</button>
+                <button id="runBasecall" class="px-2 py-1 rounded bg-teal-600 text-white text-xs" disabled><i class="fa-solid fa-play mr-1"></i>Execute</button>
+              </div>
+            </div>
+            <pre id="cmdPreviewBase" class="bg-gray-900 text-gray-100 rounded-lg p-3 text-xs monospace overflow-x-auto"># Not ready</pre>
+          </div>
+
+          <!-- Demux CMD -->
+          <div class="bg-white border rounded-xl p-4">
+            <div class="flex items-center justify-between mb-2">
+              <h4 class="font-semibold text-gray-800">Demux Command preview</h4>
+              <div class="flex items-center gap-2">
+                <button id="copyCmdDemux" class="px-2 py-1 rounded bg-gray-800 text-white text-xs"><i class="fa-regular fa-copy mr-1"></i>Copy</button>
+                <button id="runDemux" class="px-2 py-1 rounded bg-teal-600 text-white text-xs" disabled><i class="fa-solid fa-play mr-1"></i>Execute</button>
+              </div>
+            </div>
+            <pre id="cmdPreviewDemux" class="bg-gray-900 text-gray-100 rounded-lg p-3 text-xs monospace overflow-x-auto"># Not ready</pre>
+            <p class="hint mt-2">Automatically organize upon completion: <span class="kbd">barcode07/barcode07.fastq</span></p>
+          </div>
+
+          <!-- Logs -->
+          <div class="bg-white border rounded-xl p-4">
+            <div class="flex items-center justify-between">
+              <div class="font-semibold text-gray-800">Task execution and log</div>
+              <div id="jobBadge1" class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">Not started</div>
+            </div>
+            <div class="mt-3 grid grid-cols-3 gap-3 text-sm">
+              <div><div class="text-gray-500">Current Job ID</div><div id="jobId1" class="font-mono text-xs truncate">—</div></div>
+              <div><div class="text-gray-500">Status</div><div id="jobStatus1" class="font-medium">—</div></div>
+              <div><div class="text-gray-500">Exit code</div><div id="jobRC1" class="font-medium">—</div></div>
+            </div>
+            <pre id="jobLog1" class="log-pane mt-3 bg-gray-900 text-green-100 rounded-lg p-3 text-xs monospace overflow-auto"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== STEP 2 (ABS PATH INPUTS) =================== -->
+    <section class="card mb-6 locked" id="sec2">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+          <i class="fa-solid fa-scissors text-teal-600"></i> Step 2｜Trimming / QC (Input: Step_2_Trimming_QC)
+        </h3>
+        <div class="flex items-center gap-2">
+          <button id="skip2" class="px-3 py-1.5 rounded-lg border border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 text-sm">Skip</button>
+          <button id="done2" class="px-3 py-1.5 rounded-lg bg-teal-600 text-white text-sm">Mark as complete</button>
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-2 gap-6">
+        <div class="space-y-6">
+          <!-- Porechop -->
+          <div class="bg-gray-50 border rounded-xl p-4">
+            <div class="font-semibold mb-2">porechop (Input Absolute path)</div>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-gray-500">Threads</label>
+                <input id="poreThreads" type="number" min="1" step="1" value="10" class="w-full border rounded-lg px-3 py-2"/>
+              </div>
+              <div class="sm:col-span-2">
+                <label class="text-xs text-gray-500">Input FASTQ (Single, Absolute path)</label>
+                <input id="poreIn" type="text" placeholder="Example: D:\NGS\Step_1_basecaller_demux\barcode07\barcode07.fastq or /mnt/d/.../barcode07.fastq" class="w-full text-sm border rounded-lg px-3 py-2 font-mono overflow-x-auto"/>
+              </div>
+            </div>
+            <p class="hint mt-2">Output fixed to: <span class="kbd" id="s2OutLabel">(Please set the working directory first)</span>; File name: <span class="kbd">&lt;basename&gt;_trimmed.fastq</span></p>
+            <div class="mt-3">
+              <div class="font-medium text-gray-800 mb-1">Command preview</div>
+              <pre id="cmdPreviewPore" class="bg-gray-900 text-gray-100 rounded-lg p-3 text-xs monospace overflow-x-auto"># Not ready</pre>
+              <button id="runPorechop" class="mt-2 px-3 py-1.5 rounded bg-teal-600 text-white text-sm" disabled><i class="fa-solid fa-play mr-1"></i>Execute</button>
+            </div>
+          </div>
+
+          <!-- NanoPlot -->
+          <div class="bg-gray-50 border rounded-xl p-4">
+            <div class="font-semibold mb-2">NanoPlot (Input Absolute path)</div>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-gray-500">Threads</label>
+                <input id="npThreads" type="number" min="1" step="1" value="10" class="w-full border rounded-lg px-3 py-2"/>
+              </div>
+              <div class="sm:col-span-2">
+                <label class="text-xs text-gray-500">Input FASTQ (**Absolute path**)</label>
+                <input id="npIn" type="text" placeholder="Example: D:\NGS\Step_2_Trimming_QC\barcode07_trimmed.fastq or /mnt/d/.../xxx.fastq.gz" class="w-full text-sm border rounded-lg px-3 py-2 font-mono overflow-x-auto whitespace-nowrap" style="display: block;"/>
+              </div>
+            </div>
+            <p class="hint mt-2">Output fixed to: <span class="kbd" id="s2OutLabel2">(Please set the working directory first)</span>; Subfolder: <span class="kbd">nanoplot_&lt;basename&gt;</span></p>
+            <div class="mt-3">
+              <div class="font-medium text-gray-800 mb-1">Command preview</div>
+              <pre id="cmdPreviewNP" class="bg-gray-900 text-gray-100 rounded-lg p-3 text-xs monospace overflow-x-auto"># Not ready</pre>
+              <div class="flex items-center gap-2 mt-2">
+                <button id="runNanoPlot" class="px-3 py-1.5 rounded bg-teal-600 text-white text-sm" disabled><i class="fa-solid fa-play mr-1"></i>Execute</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Compare -->
+          <div class="bg-gray-50 border rounded-xl p-4">
+            <div class="font-semibold mb-2">Compare before and after trimming (read length / Q score) (Absolute path)</div>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-gray-500">pre-trim FASTQ</label>
+                <input id="cmpPre" type="text" class="w-full border rounded-lg px-3 py-2 text-sm monospace" placeholder="D:\NGS\Step_1_basecaller_demux\... or /mnt/d/..."/>
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">post-trim FASTQ</label>
+                <input id="cmpPost" type="text" class="w-full border rounded-lg px-3 py-2 text-sm monospace" placeholder="D:\NGS\Step_2_Trimming_QC\... or /mnt/d/..."/>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 mt-3">
+              <button id="doCompare" class="px-3 py-1.5 rounded bg-teal-600 text-white text-sm" disabled><i class="fa-solid fa-scale-balanced mr-1"></i>Calculate difference</button>
+              <button id="downloadCompare" class="px-3 py-1.5 rounded bg-gray-800 text-white text-sm" disabled><i class="fa-solid fa-download mr-1"></i>Download CSV</button>
+            </div>
+            <pre id="cmpResult" class="mt-3 bg-white border rounded p-2 text-xs monospace"></pre>
+          </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="space-y-6">
+          <div class="bg-white border rounded-xl p-4">
+            <div class="flex items-center justify-between">
+              <div class="font-semibold text-gray-800">Task execution and log</div>
+              <div id="jobBadge2" class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">Not started</div>
+            </div>
+            <div class="mt-3 grid grid-cols-3 gap-3 text-sm">
+              <div><div class="text-gray-500">Current Job ID</div><div id="jobId2" class="font-mono text-xs truncate">—</div></div>
+              <div><div class="text-gray-500">Status</div><div id="jobStatus2" class="font-medium">—</div></div>
+              <div><div class="text-gray-500">Exit code</div><div id="jobRC2" class="font-medium">—</div></div>
+            </div>
+            <pre id="jobLog2" class="log-pane mt-3 bg-gray-900 text-green-100 rounded-lg p-3 text-xs monospace overflow-auto"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== STEP 3 =================== -->
+    <section class="card mb-6 locked" id="sec3">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+          <i class="fa-solid fa-bacteria text-teal-600"></i> Step 3｜Classification (Kraken2 ➜ Recentrifuge)
+          (Input: Step_3_Kraken_result)
+        </h3>
+        <div class="flex items-center gap-2">
+          <button id="skip3" class="px-3 py-1.5 rounded-lg border border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 text-sm">Skip</button>
+          <button id="done3" class="px-3 py-1.5 rounded-lg bg-teal-600 text-white text-sm">Mark as complete</button>
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-2 gap-6">
+        <div class="space-y-6">
+          <!-- Kraken2 -->
+          <div class="bg-gray-50 border rounded-xl p-4">
+            <div class="font-semibold mb-2">Kraken2 (Input Absolute path)</div>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-gray-500">DB Absolute path</label>
+                <input id="krakenDb" type="text" class="w-full border rounded-lg px-3 text-sm py-2 monospace" placeholder="D:\db\kraken\standard or /mnt/d/db/kraken/standard"/>
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">Threads</label>
+                <input id="krakenThreads" type="number" min="1" step="1" value="10" class="w-full border rounded-lg px-3 py-2"/>
+              </div>
+              <div class="sm:col-span-2">
+                <label class="text-xs text-gray-500">Input FASTQ(**Absolute path**)</label>
+                <input id="krakenIn" type="text" class="w-full border rounded-lg px-3 py-2 text-sm monospace" placeholder="D:\NGS\Step_2_Trimming_QC\barcode07_trimmed.fastq or /mnt/d/..."/>
+              </div>
+            </div>
+            <p class="hint mt-2">Output fixed to:<span class="kbd" id="s3OutLabel">(Please set the working directory first)</span>；File name: <span class="kbd">&lt;basename&gt;_kraken.txt</span></p>
+            <div class="mt-3">
+              <div class="font-medium text-gray-800 mb-1">Command preview</div>
+              <pre id="cmdPreviewKraken" class="bg-gray-900 text-gray-100 rounded-lg p-3 text-xs monospace overflow-x-auto"># Not ready</pre>
+              <button id="runKraken" class="mt-2 px-3 py-1.5 rounded bg-teal-600 text-white text-sm" disabled><i class="fa-solid fa-play mr-1"></i>Execute</button>
+            </div>
+          </div>
+
+          <!-- Recentrifuge -->
+          <div class="bg-gray-50 border rounded-xl p-4">
+            <div class="font-semibold mb-2">Recentrifuge (Input Absolute path)</div>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div class="sm:col-span-2">
+                <label class="text-xs text-gray-500">-n (NCBI taxonomy nodes Folder. **Absolute path**)</label>
+                <input id="rcfNodes" type="text" class="w-full border rounded-lg px-3 py-2 monospace" placeholder="D:\db\kraken\standard\taxonomy\ or /mnt/d/..."/>
+              </div>
+            </div>
+            <p class="hint mt-2">Input fixed to <span class="kbd">&lt;Step_3&gt;/&lt;basename&gt;_kraken.txt</span>, Output fixed to <span class="kbd">&lt;Step_3&gt;/&lt;basename&gt;_rcf.html</span></p>
+            <div class="mt-3">
+              <div class="font-medium text-gray-800 mb-1">Command preview</div>
+              <pre id="cmdPreviewRcf" class="bg-gray-900 text-gray-100 rounded-lg p-3 text-xs monospace overflow-x-auto"># Not ready</pre>
+              <div class="flex items-center gap-2 mt-2">
+                <button id="runRcf" class="px-3 py-1.5 rounded bg-teal-600 text-white text-sm" disabled><i class="fa-solid fa-play mr-1"></i>Execute</button>
+                <button id="openRcf" class="px-3 py-1.5 rounded bg-gray-800 text-white text-sm" disabled><i class="fa-solid fa-up-right-from-square mr-1"></i>Open in browser</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="space-y-6">
+          <div class="bg-white border rounded-xl p-4">
+            <div class="flex items-center justify-between">
+              <div class="font-semibold text-gray-800">Task execution and log</div>
+              <div id="jobBadge3" class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">Not started</div>
+            </div>
+            <div class="mt-3 grid grid-cols-3 gap-3 text-sm">
+              <div><div class="text-gray-500">Current Job ID</div><div id="jobId3" class="font-mono text-xs truncate">—</div></div>
+              <div><div class="text-gray-500">Status</div><div id="jobStatus3" class="font-medium">—</div></div>
+              <div><div class="text-gray-500">Exit code</div><div id="jobRC3" class="font-medium">—</div></div>
+            </div>
+            <pre id="jobLog3" class="log-pane mt-3 bg-gray-900 text-green-100 rounded-lg p-3 text-xs monospace overflow-auto"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== STEP 4 =================== -->
+    <section class="card mb-6 locked" id="sec4">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+          <i class="fa-solid fa-map-location-dot text-teal-600"></i> Step 4｜Mapping & Consensus
+          (Input: Step_4_mapping_consensus)
+        </h3>
+        <div class="flex items-center gap-2">
+          <button id="skip4" class="px-3 py-1.5 rounded-lg border border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 text-sm">Skip</button>
+          <button id="done4" class="px-3 py-1.5 rounded-lg bg-teal-600 text-white text-sm">Mark as complete</button>
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-2 gap-6">
+        <div class="space-y-6">
+          <!-- Reference -->
+          <div class="bg-gray-50 border rounded-xl p-4">
+            <div class="font-semibold mb-2">Reference genome source (choose one of two; either Absolute path or NCBI ID)</div>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-gray-500">Local FASTA (optional; Absolute path)</label>
+                <input id="refLocal" type="text" class="w-full border rounded-lg text-sm px-3 py-2 monospace" placeholder="D:\ref\rotavirus_A.fasta or /mnt/d/ref/rotavirus_A.fasta"/>
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">NCBI Accession (optional)</label>
+                <input id="refAcc" type="text" class="w-full border rounded-lg px-3 py-2 monospace" placeholder="Example: MN123456"/>
+              </div>
+            </div>
+            <p class="hint mt-2">If downloaded, it will be saved and indexed to: <span class="kbd" id="s4OutLabel">(Please set the working directory first)</span></p>
+            <div class="mt-3">
+              <div class="font-medium text-gray-800 mb-1">Command preview(Reference)</div>
+              <pre id="cmdPreviewRef" class="bg-gray-900 text-gray-100 rounded-lg p-3 text-xs monospace overflow-x-auto"># Not ready</pre>
+              <button id="runFetchRef" class="mt-2 px-3 py-1.5 rounded bg-gray-800 text-white text-sm" disabled><i class="fa-solid fa-download mr-1"></i>Fetch/Index</button>
+              <span id="fetchedRefHint" class="text-xs text-gray-600 ml-2"></span>
+            </div>
+          </div>
+
+          <!-- Mapping -->
+          <div class="bg-gray-50 border rounded-xl p-4">
+            <div class="font-semibold mb-2">Mapping & Consensus (**Absolute path**)</div>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-gray-500">Input FASTQ</label>
+                <input id="mapIn" type="text" class="w-full border rounded-lg px-3 text-sm py-2 monospace" placeholder="D:\NGS\Step_2_Trimming_QC\barcode07_trimmed.fastq or /mnt/d/..."/>
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">Refernece FASTA (-VG)</label>
+                <input id="mapVG" type="text" class="w-full border rounded-lg px-3 text-sm py-2 monospace" placeholder="D:\ref\rotavirus_A.fasta or /mnt/d/ref/rotavirus_A.fasta"/>
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">Threads (-t)</label>
+                <input id="mapThreads" type="number" min="1" step="1" value="10" class="w-full border rounded-lg px-3 py-2"/>
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">Sample ID (-sid)</label>
+                <input id="mapSid" type="text" class="w-full border rounded-lg px-3 py-2" placeholder="Example barcode07"/>
+              </div>
+            </div>
+            <p class="hint mt-2">Output fixed to: <span class="kbd" id="s4OutLabel2">(Please set the working directory first)</span></p>
+            <div class="mt-3">
+              <div class="font-medium text-gray-800 mb-1">Command preview</div>
+              <pre id="cmdPreviewMap" class="bg-gray-900 text-gray-100 rounded-lg p-3 text-xs monospace overflow-x-auto"># Not ready</pre>
+              <button id="runMapping" class="mt-2 px-3 py-1.5 rounded bg-teal-600 text-white text-sm" disabled><i class="fa-solid fa-play mr-1"></i>Execute</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="space-y-6">
+          <div class="bg-white border rounded-xl p-4">
+            <div class="flex items-center justify-between">
+              <div class="font-semibold text-gray-800">Task execution and log</div>
+              <div id="jobBadge4" class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">Not started</div>
+            </div>
+            <div class="mt-3 grid grid-cols-3 gap-3 text-sm">
+              <div><div class="text-gray-500">Current Job ID</div><div id="jobId4" class="font-mono text-xs truncate">—</div></div>
+              <div><div class="text-gray-500">Status</div><div id="jobStatus4" class="font-medium">—</div></div>
+              <div><div class="text-gray-500">Exit code</div><div id="jobRC4" class="font-medium">—</div></div>
+            </div>
+            <pre id="jobLog4" class="log-pane mt-3 bg-gray-900 text-green-100 rounded-lg p-3 text-xs monospace overflow-auto"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // ================== Config & State ==================
+    const qs = new URLSearchParams(location.search);
+    const backendBase =
+      qs.get("backend") ||
+      (location.origin.startsWith("http") ? location.origin : "http://127.0.0.1:8000");
+    const state = {
+      wsAbs: "", // Absolute path(Windows or WSL)
+      // Step 1
+      pod5Abs:"", device:"cuda:all", minQ:9, kitName:"", modelTier:"",
+      threads:10, demuxKitName:"", demuxAbsList:[],
+      // Step 2
+      poreThreads:10, poreIn:"", npThreads:10, npIn:"",
+      // Step 3
+      krakenDb:"", krakenThreads:10, krakenIn:"", rcfNodes:"",
+      // Step 4
+      refLocal:"", refAcc:"", mapIn:"", mapVG:"", mapThreads:10, mapSid:"",
+      // control
+      es:{}, unlocked:{1:false,2:false,3:false,4:false}
+    };
+
+    // =========== Helpers ===========
+    const el = id => document.getElementById(id);
+    const isWinPath = (p) => /^[A-Za-z]:\\/.test(p||"") || (p||"").startsWith("\\\\");
+    const sepOf = (p) => isWinPath(p) ? "\\" : "/";
+    const joinStep = (baseAbs, stepName) => {
+      if (!baseAbs) return "";
+      const sep = sepOf(baseAbs);
+      return baseAbs.replace(/[\\/]+$/,"") + sep + stepName;
+    };
+    const joinOut = (baseAbs, child) => {
+      if (!baseAbs) return "";
+      const sep = sepOf(baseAbs);
+      return baseAbs.replace(/[\\/]+$/,"") + sep + child.replace(/^[\\/]+/,"");
+    };
+    function setDot(step, kind){
+      const dot = el(`dot${step}`);
+      dot.className = "dot " + (
+        kind==="active" ? "dot-active" :
+        kind==="next"   ? "dot-next"   :
+        kind==="done"   ? "dot-done"   :
+        kind==="skip"   ? "dot-skip"   : "dot-lock"
+      );
+    }
+    function lockStep(step, locked){
+      const sec = el(`sec${step}`);
+      if (locked) sec.classList.add("locked"); else sec.classList.remove("locked");
+      if (!locked){ setDot(step, "active"); }
+      const runButtons = sec.querySelectorAll("button[id^=run],button#openRcf,button#doCompare,button#downloadCompare");
+      runButtons.forEach(b => b.disabled = locked);
+    }
+    function unlockNextStep(curr){
+      if (curr<4){ lockStep(curr+1,false); setDot(curr,"done"); setDot(curr+1,"active"); }
+      else { setDot(curr,"done"); }
+    }
+    function skipStep(curr){
+      if (curr<4){ lockStep(curr+1,false); setDot(curr,"skip"); setDot(curr+1,"active"); }
+      else { setDot(curr,"skip"); }
+    }
+    function initPipelineDots(){ setDot(1,"lock"); setDot(2,"lock"); setDot(3,"lock"); setDot(4,"lock"); }
+    const BARCODE_RE = /(barcode\d{2})/i;
+    function getBarcodeFromPath(p){
+      const bn = (p||"").split(/[\\/]/).pop().replace(/(\.fastq|\.fq)(\.gz)?$/i,"");
+      const m = bn.match(BARCODE_RE);
+      return m ? m[1].toLowerCase() : "";
+    }
+    // ----- Step 0 -----
+    function refreshWSView(){
+      const s1 = joinStep(state.wsAbs,"Step_1_basecaller_demux");
+      const s2 = joinStep(state.wsAbs,"Step_2_Trimming_QC");
+      const s3 = joinStep(state.wsAbs,"Step_3_Kraken_result");
+      const s4 = joinStep(state.wsAbs,"Step_4_mapping_consensus");
+      el("pStep1").textContent = s1 || "(Not set)";
+      el("pStep2").textContent = s2 || "(Not set)";
+      el("pStep3").textContent = s3 || "(Not set)";
+      el("pStep4").textContent = s4 || "(Not set)";
+      el("s1OutLabel").textContent = s1 || "(Please set the working directory first)"; // Basecaller
+      el("s1OutLabel2").textContent = s1 ? joinOut(s1, "demux") : "(Please set the working directory first)"; // Demux
+      el("s2OutLabel").textContent = s2 || "(Please set the working directory first)";
+      el("s2OutLabel2").textContent = s2 || "(Please set the working directory first)";
+      el("s3OutLabel").textContent = s3 || "(Please set the working directory first)";
+      el("s4OutLabel").textContent = s4 || "(Please set the working directory first)";
+      el("s4OutLabel2").textContent = s4 || "(Please set the working directory first)";
+      const isWin = isWinPath(state.wsAbs);
+      const cmd = isWin
+        ? `# Windows PowerShell\nNew-Item -ItemType Directory -Force -Path "${s1}"\nNew-Item -ItemType Directory -Force -Path "${s2}"\nNew-Item -ItemType Directory -Force -Path "${s3}"\nNew-Item -ItemType Directory -Force -Path "${s4}"`
+        : `# bash\nmkdir -p "${s1}" "${s2}" "${s3}" "${s4}"`;
+      el("cmdPreviewWS").textContent = cmd;
+    }
+    el("setWorkspace").addEventListener("click", ()=>{
+      const abs = (el("wsAbs").value || "").trim();
+      if (!abs){ alert("Please enter the Absolute path of the working directory."); return; }
+      state.wsAbs = abs;
+      el("wsStatus").textContent = "Set";
+      el("wsStatus").className = "text-sm font-medium bg-green-100 text-green-800 px-3 py-1 rounded-full";
+      refreshWSView();
+      lockStep(1,false); setDot(1,"active");
+      el("prepWorkspace").disabled = false;
+    });
+    el("clearWorkspace").addEventListener("click", ()=>{
+      state.wsAbs = "";
+      el("wsStatus").textContent = "Not set";
+      el("wsStatus").className = "text-sm font-medium bg-amber-100 text-amber-700 px-3 py-1 rounded-full";
+      refreshWSView();
+      lockStep(1,true); lockStep(2,true); lockStep(3,true); lockStep(4,true); initPipelineDots();
+      el("prepWorkspace").disabled = true;
+    });
+
+    el("prepWorkspace").addEventListener("click", async ()=>{
+      if (!state.wsAbs){ alert("Please set the working directory first."); return; }
+      try{
+        const r = await fetch(backendBase + "/api/workspace/prepare", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ws_abs: state.wsAbs })
+        });
+        if (!r.ok){
+            const t = await r.text();
+            alert("Creation failed:\n" + t);
+            return;
+        }
+        await r.json();
+        el("wsStatus").textContent = "Subfolders created";
+        el("wsStatus").className = "text-sm font-medium bg-blue-100 text-blue-800 px-3 py-1 rounded-full";
+        refreshWSView();
+      }catch(err){
+        alert("Creation failed:" + err);
+      }
+    });
+
+    // ----- Step 1 -----
+    function baseNameNoExt(p){
+      if(!p) return "";
+      const n = p.split(/[\\/]/).pop();
+      return n.replace(/(\.fastq|\.fq)(\.gz)?$/i,"").replace(/\s+/g,"_");
+    }
+    function buildBasecallerCmd(){
+      const pod = state.pod5Abs || "<Not set POD5/FAST5 資料夾>";
+      const out = joinStep(state.wsAbs,"Step_1_basecaller_demux") || "<Working directory not set>";
+      const minQ = Number.isFinite(+state.minQ)? `--min-qscore ${state.minQ}`:"";
+      const kit = state.kitName? `--kit-name ${state.kitName}`:"<缺少 --kit-name>";
+      const model = state.modelTier || "<缺少 model>";
+      return `dorado basecaller --device ${state.device} ${minQ} ${kit} --emit-fastq -o "${out}" --no-trim ${model} "${pod}"`.replace(/\s+/g," ").trim();
+    }
+    function buildDemuxCmd(){
+      const outRoot = joinStep(state.wsAbs,"Step_1_basecaller_demux");
+      const out = joinOut(outRoot, "demux");
+      const kit = (state.demuxKitName||state.kitName);
+      const kitArg = kit? `--kit-name ${kit}`:"";
+      const inputs = state.demuxAbsList.length? state.demuxAbsList.map(x=>`"${x}"`).join(" ") : "<Missing input FASTQ(Absolute path)>";
+      return `dorado demux --output-dir "${out}" ${kitArg} -t ${Number(state.threads)||8} --emit-fastq ${inputs}`.replace(/\s+/g," ").trim();
+    }
+    function updateCmdPreviewsStep1(){
+      el("cmdPreviewBase").textContent = buildBasecallerCmd();
+      el("cmdPreviewDemux").textContent = buildDemuxCmd();
+      const canBase = !!state.wsAbs && !!state.pod5Abs && !!state.kitName && !!state.modelTier;
+      const canDemux = !!state.wsAbs && state.demuxAbsList.length>0;
+      el("runBasecall").disabled = !canBase;
+      el("runDemux").disabled = !canDemux;
+      el("demuxKitWarn").textContent = (!state.demuxKitName && !state.kitName)
+        ? "Hint: --kit-name not specified. If Demux cannot recognize it, please select a kit above or here."
+        : "";
+    }
+    el("pod5Abs").addEventListener("input", e=>{ state.pod5Abs=e.target.value.trim(); updateCmdPreviewsStep1(); });
+    el("device").addEventListener("change", e=>{ state.device=e.target.value; updateCmdPreviewsStep1(); });
+    el("minQ").addEventListener("input", e=>{ state.minQ=e.target.value; updateCmdPreviewsStep1(); });
+    el("kitName").addEventListener("change", e=>{ state.kitName=e.target.value; updateCmdPreviewsStep1(); });
+    el("modelTier").addEventListener("change", e=>{ state.modelTier=e.target.value; updateCmdPreviewsStep1(); });
+    el("threads").addEventListener("input", e=>{ state.threads=parseInt(e.target.value||"8",10); updateCmdPreviewsStep1(); });
+    el("demuxKitName").addEventListener("change", e=>{ state.demuxKitName=e.target.value; updateCmdPreviewsStep1(); });
+    el("demuxAbsList").addEventListener("input", e=>{
+      const txt = e.target.value.trim();
+      state.demuxAbsList = txt? txt.split(/\r?\n/).map(s=>s.trim()).filter(Boolean) : [];
+      updateCmdPreviewsStep1();
+    });
+
+    async function postJSON(url, payload){ return fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); }
+    function println(targetId, s){ const p = el(targetId); p.textContent += s + "\n"; p.scrollTop = p.scrollHeight; }
+    function setBadge(id, status){
+      const badge = el(id);
+      const map = {queued:['bg-amber-100','text-amber-700'],running:['bg-blue-100','text-blue-700'],succeeded:['bg-green-100','text-green-700'],failed:['bg-rose-100','text-rose-700']};
+      badge.className = 'text-xs px-2 py-1 rounded-full ' + (map[status]?.join(' ') || 'bg-gray-100 text-gray-600');
+      badge.textContent = status || 'Not started';
+    }
+    async function subscribeLog(jobId, paneId){
+      if (!jobId) return;
+      const url = backendBase + `/api/jobs/${jobId}/events`;
+      println(paneId, `[frontend] Connection log: ${url}`);
+      const es = new EventSource(url);
+      let finished = false;
+      es.onmessage = async (evt)=>{
+        if (evt.data === "[DONE]"){
+          finished = true;
+          println(paneId,"[frontend] Log streaming finished");
+          try {
+            const s = await fetch(backendBase + `/api/jobs/${jobId}`);
+            if (s.ok){
+              const j = await s.json();
+              const badgeId =
+                paneId==="jobLog1" ? "jobBadge1" :
+                paneId==="jobLog2" ? "jobBadge2" :
+                paneId==="jobLog3" ? "jobBadge3" :
+                paneId==="jobLog4" ? "jobBadge4" : null;
+              if (badgeId) setBadge(badgeId, j.status);
+            }
+           } catch(_) {}
+           es.close();
+         } else {
+           println(paneId, evt.data);
+         }
+       };
+      es.onerror = ()=>{ 
+        if (!finished) {
+          println(paneId,"[frontend] SSE error/interruption");
+        }
+        try{ es.close(); }catch(e){}
+      };
+      return es;
+    }
+    async function pollStatus(jobId, badgeId, rcId){
+      if (!jobId) return;
+      const url = backendBase + `/api/jobs/${jobId}`;
+      async function tick(){ try{
+        const r = await fetch(url); if(!r.ok) throw new Error("Status query failed");
+        const j = await r.json();
+        setBadge(badgeId, j.status);
+        const rcEl = el(rcId);
+        if (rcEl) rcEl.textContent = (j.return_code ?? '—');
+        if (j.status==="succeeded" || j.status==="failed") return;
+      }catch(e){ return; } setTimeout(tick, 1200); }
+      tick();
+    }
+    async function apiStartBasecall(){
+      const payload = {
+        data_dir: state.pod5Abs,
+        out_dir: joinStep(state.wsAbs,"Step_1_basecaller_demux"),
+        device: state.device, min_qscore: Number(state.minQ)||0,
+        kit_name: state.kitName, model_tier: state.modelTier
+      };
+      println("jobLog1", "[frontend] POST /api/dorado/basecall ...");
+      const res = await postJSON(backendBase+"/api/dorado/basecall", payload);
+      if (!res.ok){ setBadge("jobBadge1","failed"); println("jobLog1","[frontend] Startup failed"); return; }
+      const j = await res.json(); el("jobId1").textContent=j.job_id; setBadge("jobBadge1", j.status);
+      await subscribeLog(j.job_id,"jobLog1"); pollStatus(j.job_id,"jobBadge1","jobRC1");
+    }
+    async function apiStartDemux(){
+      const payload = {
+        in_fastq_list: state.demuxAbsList,
+        out_dir: joinStep(state.wsAbs,"Step_1_basecaller_demux"),
+        kit_name: state.demuxKitName || state.kitName || null,
+        threads: Number(state.threads)||8
+      };
+      println("jobLog1", "[frontend] POST /api/dorado/demux ...");
+      const res = await postJSON(backendBase+"/api/dorado/demux", payload);
+      if (!res.ok){ setBadge("jobBadge1","failed"); println("jobLog1","[frontend] Startup failed"); return; }
+      const j = await res.json(); el("jobId1").textContent=j.job_id; setBadge("jobBadge1", j.status);
+      await subscribeLog(j.job_id,"jobLog1"); pollStatus(j.job_id,"jobBadge1","jobRC1");
+    }
+    el("copyCmdBase").addEventListener("click", ()=> navigator.clipboard.writeText(el("cmdPreviewBase").textContent));
+    el("copyCmdDemux").addEventListener("click", ()=> navigator.clipboard.writeText(el("cmdPreviewDemux").textContent));
+    el("runBasecall").addEventListener("click", apiStartBasecall);
+    el("runDemux").addEventListener("click", apiStartDemux);
+    el("done1").addEventListener("click", ()=> unlockNextStep(1));
+    el("skip1").addEventListener("click", ()=> skipStep(1));
+
+    // ----- Step 2 -----
+    function buildPoreCmd(){
+      const inAbs = state.poreIn || "<Not set FASTQ Absolute path>";
+      const outDir = joinStep(state.wsAbs,"Step_2_Trimming_QC");
+      const bc = getBarcodeFromPath(inAbs);
+      const outDir2 = bc ? joinOut(outDir, bc) : outDir;
+      const bn = baseNameNoExt(inAbs);
+      const sep = sepOf(outDir2 || state.wsAbs || "/");
+      const outFile = outDir2 ? `${outDir2}${sep}${bn}_trimmed.fastq` : `${outDir}/${bn}_trimmed.fastq`;
+      return `porechop -i "${inAbs}" -o "${outFile}" -t ${Number(state.poreThreads)||10}`;
+    }
+    function buildNPCmd(){
+      const inAbs = state.npIn || "<Not set FASTQ Absolute path>";
+      const outDir = joinStep(state.wsAbs,"Step_2_Trimming_QC");
+      const bc = getBarcodeFromPath(inAbs);
+      const outDir2 = bc ? joinOut(outDir, bc) : outDir;
+      const bn = baseNameNoExt(inAbs);
+      return `NanoPlot -t ${Number(state.npThreads)||10} -o "${joinOut(outDir2, `nanoplot_${bn}`)}" --fastq "${inAbs}" --only-report`;
+    }
+    function updateCmdPreviewsStep2(){
+      el("cmdPreviewPore").textContent = buildPoreCmd();
+      el("cmdPreviewNP").textContent   = buildNPCmd();
+      const canPore = !!state.wsAbs && !!state.poreIn;
+      const canNP   = !!state.wsAbs && !!state.npIn;
+      el("runPorechop").disabled = !canPore;
+      el("runNanoPlot").disabled = !canNP;
+      el("doCompare").disabled = !(el("cmpPre").value.trim() && el("cmpPost").value.trim());
+      el("downloadCompare").disabled = !(el("cmpPre").value.trim() && el("cmpPost").value.trim());
+    }
+    el("poreThreads").addEventListener("input", e=>{ state.poreThreads=parseInt(e.target.value||"10",10); updateCmdPreviewsStep2(); });
+    el("poreIn").addEventListener("input", e=>{ state.poreIn=e.target.value.trim(); updateCmdPreviewsStep2(); });
+    el("npThreads").addEventListener("input", e=>{ state.npThreads=parseInt(e.target.value||"10",10); updateCmdPreviewsStep2(); });
+    el("npIn").addEventListener("input", e=>{ state.npIn=e.target.value.trim(); updateCmdPreviewsStep2(); });
+    el("cmpPre").addEventListener("input", updateCmdPreviewsStep2);
+    el("cmpPost").addEventListener("input", updateCmdPreviewsStep2);
+
+    async function runPore(){
+      const inAbs = state.poreIn
+      const outDir = joinStep(state.wsAbs,"Step_2_Trimming_QC");
+      const payload = { in_fastq: inAbs, out_dir: outDir, threads: Number(state.poreThreads)||10 };
+      println("jobLog2","[frontend] POST /api/porechop/run ...");
+      const r = await postJSON(backendBase+"/api/porechop/run", payload);
+      if (!r.ok){ setBadge("jobBadge2","failed"); println("jobLog2","[frontend] Startup failed"); return; }
+      const j = await r.json(); el("jobId2").textContent=j.job_id; setBadge("jobBadge2", j.status);
+      await subscribeLog(j.job_id,"jobLog2"); pollStatus(j.job_id,"jobBadge2","jobRC2");
+    }
+    async function runNP(){
+      const inAbs = el("npIn").value.trim();
+      const bc = getBarcodeFromPath(inAbs);
+      const bn = baseNameNoExt(inAbs);
+      const outDir = joinStep(state.wsAbs,"Step_2_Trimming_QC");
+      const payload = { in_fastq: inAbs, out_dir: outDir, threads: Number(state.npThreads)||10 };
+      println("jobLog2","[frontend] POST /api/nanoplot/run ...");
+      const r = await postJSON(backendBase+"/api/nanoplot/run", payload);
+      if (!r.ok){ setBadge("jobBadge2","failed"); println("jobLog2","[frontend] Startup failed"); return; }
+      const j = await r.json(); el("jobId2").textContent=j.job_id; setBadge("jobBadge2", j.status);
+      await subscribeLog(j.job_id,"jobLog2"); pollStatus(j.job_id,"jobBadge2","jobRC2");
+    }
+    function dlNPZip(){
+      const inAbs = el("npIn").value.trim(); if (!inAbs) return;
+      const bn = baseNameNoExt(inAbs);
+      const dir = joinOut(joinStep(state.wsAbs,"Step_2_Trimming_QC"), `nanoplot_${bn}`);
+      window.open(backendBase+`/api/files/zip?path=${encodeURIComponent(dir)}`, "_blank");
+    }
+    async function doCompare(){
+      const pre = el("cmpPre").value.trim(); const post = el("cmpPost").value.trim(); if (!pre || !post) return;
+      const payload = { pre_fastq: pre, post_fastq: post };
+      const r = await postJSON(backendBase+"/api/fastq/compare", payload);
+      const txt = await r.text(); el("cmpResult").textContent = txt;
+    }
+    function dlCompare(){
+      const pre = el("cmpPre").value.trim(); const post = el("cmpPost").value.trim(); if (!pre || !post) return;
+      const payload = { pre_fastq: pre, post_fastq: post };
+      fetch(backendBase+"/api/fastq/compare",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+        .then(r=>r.blob()).then(b=>{ const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download="fastq_compare.csv"; a.click(); URL.revokeObjectURL(url); });
+    }
+    el("runPorechop").addEventListener("click", runPore);
+    el("runNanoPlot").addEventListener("click", runNP);
+    el("doCompare").addEventListener("click", doCompare);
+    el("downloadCompare").addEventListener("click", dlCompare);
+    el("done2").addEventListener("click", ()=> unlockNextStep(2));
+    el("skip2").addEventListener("click", ()=> skipStep(2));
+
+    // ----- Step 3 -----
+    function buildKrakenCmd(){
+      const inAbs = state.krakenIn || "<Not set FASTQ Absolute path>";
+      const bn = baseNameNoExt(inAbs);
+      const out = joinStep(state.wsAbs,"Step_3_Kraken_result") || "<Working directory not set>";
+      const bc = getBarcodeFromPath(inAbs);
+      const out2 = bc ? joinOut(out, bc) : out;
+      return `k2 classify --db "${state.krakenDb||"<Missing DB Absolute path>"}" --threads ${Number(state.krakenThreads)||10} --output "${joinOut(out2, `${bn}_kraken.txt`)}" "${inAbs}"`;
+    }
+    function buildRcfCmd(){
+      const inAbs = state.krakenIn || "";
+      const bn = baseNameNoExt(inAbs);
+      const out = joinStep(state.wsAbs,"Step_3_Kraken_result") || "<Working directory not set>";
+      const bc = getBarcodeFromPath(inAbs);
+      const out2 = bc ? joinOut(out, bc) : out;
+      return `rcf -n "${state.rcfNodes||"<Misiing nodes Absolute path>"}" -k "${joinOut(out2, `${bn}_kraken.txt`)}" -o "${joinOut(out2, `${bn}_rcf.html`)}"`;
+    }
+    function updateCmdPreviewsStep3(){
+      el("cmdPreviewKraken").textContent = buildKrakenCmd();
+      el("cmdPreviewRcf").textContent    = buildRcfCmd();
+      const canK = !!state.wsAbs && !!state.krakenIn && !!state.krakenDb;
+      const canR = !!state.wsAbs && !!state.krakenIn && !!state.rcfNodes;
+      el("runKraken").disabled = !canK;
+      el("runRcf").disabled    = !canR;
+      el("openRcf").disabled   = !canR;
+    }
+    el("krakenDb").addEventListener("input", e=>{ state.krakenDb=e.target.value.trim(); updateCmdPreviewsStep3(); });
+    el("krakenThreads").addEventListener("input", e=>{ state.krakenThreads=parseInt(e.target.value||"10",10); updateCmdPreviewsStep3(); });
+    el("krakenIn").addEventListener("input", e=>{ state.krakenIn=e.target.value.trim(); updateCmdPreviewsStep3(); });
+    el("rcfNodes").addEventListener("input", e=>{ state.rcfNodes=e.target.value.trim(); updateCmdPreviewsStep3(); });
+    async function runKraken(){
+      const inAbs = el("krakenIn").value.trim();
+      const bn = baseNameNoExt(inAbs);
+      const outDir = joinStep(state.wsAbs,"Step_3_Kraken_result");
+      const bc = getBarcodeFromPath(inAbs);
+      const payload = { in_fastq: inAbs, db: state.krakenDb, out_path: joinOut(outDir, `${bn}_kraken.txt`), threads: Number(state.krakenThreads)||10 };
+      println("jobLog3","[frontend] POST /api/kraken2/run ...");
+      const r = await postJSON(backendBase+"/api/kraken2/run", payload);
+      if (!r.ok){ setBadge("jobBadge3","failed"); println("jobLog3","[frontend] Startup failed"); return; }
+      const j = await r.json(); el("jobId3").textContent=j.job_id; setBadge("jobBadge3", j.status);
+      await subscribeLog(j.job_id,"jobLog3"); pollStatus(j.job_id,"jobBadge3","jobRC3");
+    }
+    async function runRcf(){
+      const inAbs = el("krakenIn").value.trim();
+      const bn = baseNameNoExt(inAbs);
+      const outDir = joinStep(state.wsAbs,"Step_3_Kraken_result");
+      const bc = getBarcodeFromPath(inAbs);
+      const base = outDir
+      const payload = { kraken_result: joinOut(base, `${bn}_kraken.txt`), out_html: joinOut(base, `${bn}_rcf.html`), nodes_file: state.rcfNodes };
+      println("jobLog3","[frontend] POST /api/recentrifuge/run ...");
+      const r = await postJSON(backendBase+"/api/recentrifuge/run", payload);
+      if (!r.ok){ setBadge("jobBadge3","failed"); println("jobLog3","[frontend] Startup failed"); return; }
+      const j = await r.json(); el("jobId3").textContent=j.job_id; setBadge("jobBadge3", j.status);
+      await subscribeLog(j.job_id,"jobLog3"); pollStatus(j.job_id,"jobBadge3","jobRC3");
+    }
+    function openRcf(){
+      const inAbs = el("krakenIn").value.trim(); if (!inAbs) return;
+      const bn = baseNameNoExt(inAbs);
+      const outDir = joinStep(state.wsAbs,"Step_3_Kraken_result");
+      const bc = getBarcodeFromPath(inAbs);           // e.g. "barcode07" or ""
+      const html = joinOut(bc ? joinOut(outDir, bc) : outDir, `${bn}_rcf.html`);
+      window.open(backendBase + `/api/file?path=${encodeURIComponent(html)}`, "_blank");
+    }
+    el("runKraken").addEventListener("click", runKraken);
+    el("runRcf").addEventListener("click", runRcf);
+    el("openRcf").addEventListener("click", openRcf);
+    el("done3").addEventListener("click", ()=> unlockNextStep(3));
+    el("skip3").addEventListener("click", ()=> skipStep(3));
+
+    // ----- Step 4 -----
+    function buildRefCmd(){
+      const dest = joinStep(state.wsAbs,"Step_4_mapping_consensus") || "<Working directory not set>";
+      const acc = (state.refAcc||"").trim();
+      const loc = (state.refLocal||"").trim();
+      const sep = sepOf(dest || state.wsAbs || "/");
+      if (acc){
+        const fasta = `${dest}${sep}ref_${acc}.fasta`;
+        return `efetch -db nuccore -id ${acc} -format fasta > "${fasta}" && minimap2 -d "${fasta}.mmi" "${fasta}"`;
+      } else if (loc){
+        const bn = baseNameNoExt(loc);
+        const mmi = `${dest}${sep}${bn}.mmi`;
+        return `minimap2 -d "${mmi}" "${loc}"`;
+      }
+      return "Please enter the NCBI Accession or local FASTA (absolute path)";
+    }
+    function buildMapCmd(){
+      const inAbs = state.mapIn || "<Not set FASTQ Absolute path>";
+      const VG = state.mapVG || "<Not set FASTA Absolute path>";
+      const sid = (state.mapSid || baseNameNoExt(inAbs) || "<sid>").replace(/\s+/g,"_");
+      const out = joinOut(joinStep(state.wsAbs,"Step_4_mapping_consensus"), sid) || "<Working directory not set>";
+      return `python ~/home_made_tools/raw_read_to_mapping_genome.py -f1 "${inAbs}" -mt minimap2 -VG "${VG}" -t ${Number(state.mapThreads)||10} -sid ${sid} -oD "${out}"`;
+    }
+    function updateCmdPreviewsStep4(){
+      el("cmdPreviewRef").textContent = buildRefCmd();
+      el("cmdPreviewMap").textContent = buildMapCmd();
+      const canFetch = !!state.wsAbs && ((state.refAcc||"").trim() || (state.refLocal||"").trim());
+      const canMap   = !!state.wsAbs && !!(state.mapIn||"").trim() && !!(state.mapVG||"").trim();
+      el("runFetchRef").disabled = !canFetch;
+      el("runMapping").disabled  = !canMap;
+    }
+    el("refLocal").addEventListener("input", e=>{ state.refLocal=e.target.value.trim(); if (state.refLocal) state.refAcc=""; updateCmdPreviewsStep4(); });
+    el("refAcc").addEventListener("input", e=>{ state.refAcc=e.target.value.trim(); if (state.refAcc) state.refLocal=""; updateCmdPreviewsStep4(); });
+    el("mapIn").addEventListener("input", e=>{ state.mapIn=e.target.value.trim(); updateCmdPreviewsStep4(); });
+    el("mapVG").addEventListener("input", e=>{ state.mapVG=e.target.value.trim(); updateCmdPreviewsStep4(); });
+    el("mapThreads").addEventListener("input", e=>{ state.mapThreads=parseInt(e.target.value||"10",10); updateCmdPreviewsStep4(); });
+    el("mapSid").addEventListener("input", e=>{ state.mapSid=e.target.value; updateCmdPreviewsStep4(); });
+
+    async function runFetchRef(){
+      const payload = { dest_dir: joinStep(state.wsAbs,"Step_4_mapping_consensus"), local_fasta: state.refLocal || null, ncbi_id: state.refAcc || null, build_index: true };
+      println("jobLog4","[frontend] POST /api/reference/fetch ...");
+      const r = await postJSON(backendBase+"/api/reference/fetch", payload);
+      if (!r.ok){ const t = await r.text(); el("fetchedRefHint").textContent = "Failed:" + t; return; }
+      const j = await r.json(); el("mapVG").value = j.fasta; state.mapVG = j.fasta; el("fetchedRefHint").textContent = `OK: ${j.fasta}`; updateCmdPreviewsStep4();
+    }
+    async function runMapping(){
+      const sid = state.mapSid || baseNameNoExt(state.mapIn);
+      const base = joinStep(state.wsAbs,"Step_4_mapping_consensus");
+      const payload = { f1: state.mapIn, VG: state.mapVG, t: Number(state.mapThreads)||10, sid, oD: base};
+      println("jobLog4","[frontend] POST /api/mapping/run ...");
+      const r = await postJSON(backendBase+"/api/mapping/run", payload);
+      if (!r.ok){ setBadge("jobBadge4","failed"); println("jobLog4","[frontend] Startup failed"); return; }
+      const j = await r.json(); el("jobId4").textContent=j.job_id; setBadge("jobBadge4", j.status);
+      await subscribeLog(j.job_id,"jobLog4"); pollStatus(j.job_id,"jobBadge4","jobRC4");
+    }
+    el("runFetchRef").addEventListener("click", runFetchRef);
+    el("runMapping").addEventListener("click", runMapping);
+    el("done4").addEventListener("click", ()=> unlockNextStep(4));
+    el("skip4").addEventListener("click", ()=> skipStep(4));
+
+    // init
+    (function init(){ lockStep(1,true); lockStep(2,true); lockStep(3,true); lockStep(4,true); initPipelineDots(); })();
+  </script>
+</body>
+</html>
