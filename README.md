@@ -11,7 +11,7 @@ It also shows the exact commands executed under the hood, helping users understa
 
 ## Features
 - Web-based UI (HTML) for simple workflow control.
-- Backend powered by **FastAPI** (`main.py`).
+- Backend powered by **[FastAPI](https://fastapi.tiangolo.com/)** (`main.py`).
 - Supports read mapping workflows ([minimap2](https://github.com/lh3/minimap2), [samtools](https://github.com/samtools/samtools), [bcftools](https://github.com/samtools/bcftools), etc.).
 - Organized output directories for each processing step.
 - Ready-to-use script (`run_ui.py`) to start the backend and access the UI.
