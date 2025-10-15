@@ -34,6 +34,12 @@ def plot_coverage(input_file, fasta_file, output_file, title, style,
 
     # 取得 chr 長度
     chrom_lengths = load_fasta_lengths(fasta_file)
+
+    #Detect genoeme size, if genome are large the function will take too mach time.
+    if any(length > 2_000_000 for length in chrom_lengths.values()):
+        prin("⚠️ The genome is too large; please open it using IGV.")
+        return
+    
     chroms = list(chrom_lengths.keys())
     rows = len(chroms)
     if rows == 0:
