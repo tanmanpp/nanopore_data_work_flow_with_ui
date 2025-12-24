@@ -27,7 +27,7 @@ It also shows the exact commands executed under the hood, helping users understa
 ### I. Clone this repository
 ```bash
 git clone https://github.com/tanmanpp/nanopore_data_work_flow_with_ui.git
-cd ngs-mapping-ui
+cd nanopore_data_work_flow_with_ui
 ```
 
 ### II. Conda environments
