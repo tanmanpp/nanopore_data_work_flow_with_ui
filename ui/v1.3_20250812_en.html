@@ -768,8 +768,27 @@
       const j = await res.json(); el("jobId1").textContent=j.job_id; setBadge("jobBadge1", j.status);
       await subscribeLog(j.job_id,"jobLog1"); pollStatus(j.job_id,"jobBadge1","jobRC1");
     }
-    el("copyCmdBase").addEventListener("click", ()=> navigator.clipboard.writeText(el("cmdPreviewBase").textContent));
-    el("copyCmdDemux").addEventListener("click", ()=> navigator.clipboard.writeText(el("cmdPreviewDemux").textContent));
+    async function copyTextToClipboard(text){
+      if (!text) return;
+      // Prefer modern Clipboard API when available (must be called from a user gesture).
+      const writeText = navigator.clipboard?.writeText;
+      if (writeText){
+        try { return await writeText.call(navigator.clipboard, text); }
+        catch(e){ console.warn("clipboard.writeText failed", e); }
+      }
+      // Fallback for environments where Clipboard API is not available or restricted.
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); }
+      catch(e){ console.warn("execCommand copy failed", e); }
+      document.body.removeChild(ta);
+    }
+    el("copyCmdBase").addEventListener("click", ()=> copyTextToClipboard(el("cmdPreviewBase").textContent));
+    el("copyCmdDemux").addEventListener("click", ()=> copyTextToClipboard(el("cmdPreviewDemux").textContent));
     el("runBasecall").addEventListener("click", apiStartBasecall);
     el("runDemux").addEventListener("click", apiStartDemux);
     el("done1").addEventListener("click", ()=> unlockNextStep(1));
